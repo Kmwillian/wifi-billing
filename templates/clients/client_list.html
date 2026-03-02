@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Clients — KimNet{% endblock %}
+{% block page_title %}Clients{% endblock %}
+{% block page_subtitle %}Manage all WiFi users{% endblock %}
+
+{% block content %}
+
+<!-- ── Stats Cards ─────────────────────────────────── -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Active Now</p>
+                <p class="text-3xl font-bold text-green-600 mt-1">{{ active_count }}</p>
+            </div>
+            <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-signal text-green-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Inactive</p>
+                <p class="text-3xl font-bold text-gray-400 mt-1">{{ inactive_count }}</p>
+            </div>
+            <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-user-clock text-gray-400 text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Blocked</p>
+                <p class="text-3xl font-bold text-red-600 mt-1">{{ blocked_count }}</p>
+            </div>
+            <div class="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-ban text-red-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Filters Bar ────────────────────────────────── -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+    <form method="get" class="flex flex-wrap items-end gap-3">
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <input type="text" 
+                   name="search" 
+                   value="{{ search }}"
+                   placeholder="Name, phone, or MAC..."
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+
+        <div class="flex-1 min-w-[180px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Status</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="blocked" {% if status_filter == 'blocked' %}selected{% endif %}>Blocked</option>
+            </select>
+        </div>
+
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors">
+            <i class="fas fa-search"></i>
+            Search
+        </button>
+
+        <a href="{% url 'clients:list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors">
+            Clear
+        </a>
+    </form>
+</div>
+
+<!-- ── Clients Table ──────────────────────────────── -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Client</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Active Session</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Sessions</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Joined</th>
+                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for client in clients %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-blue-600 font-bold text-sm">{{ client.full_name|first|upper }}</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-900">{{ client.full_name }}</p>
+                                {% if client.mac_address %}
+                                <p class="text-xs text-gray-400 font-mono">{{ client.mac_address }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-sm text-gray-700">{{ client.phone }}</p>
+                        {% if client.email %}
+                        <p class="text-xs text-gray-400">{{ client.email }}</p>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if client.status == 'active' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 pulse-dot"></span>
+                            Active
+                        </span>
+                        {% elif client.status == 'blocked' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>
+                            Blocked
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span>
+                            Inactive
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% with session=client.active_session %}
+                        {% if session %}
+                        <div class="text-sm">
+                            <p class="font-medium text-blue-600">{{ session.time_remaining_display }}</p>
+                            <p class="text-xs text-gray-400">{{ session.package.name }}</p>
+                        </div>
+                        {% else %}
+                        <span class="text-xs text-gray-400">—</span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-700">{{ client.total_sessions }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ client.created_at|date:"d M Y" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <a href="{% url 'clients:detail' client.pk %}"
+                           class="text-blue-600 hover:text-blue-800 text-sm font-medium mr-3">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'clients:update' client.pk %}"
+                           class="text-gray-600 hover:text-gray-800 text-sm font-medium">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center justify-center text-gray-400">
+                            <i class="fas fa-users text-5xl mb-3 opacity-20"></i>
+                            <p class="text-sm font-medium">No clients yet</p>
+                            <p class="text-xs mt-1">Clients will appear here after their first connection</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

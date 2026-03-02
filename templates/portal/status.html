@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Waiting for Payment — VilNet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
+<div class="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 text-center">
+    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4" id="status-icon">
+        <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+    </div>
+    <h2 class="text-gray-800 font-bold text-xl" id="status-title">Waiting for Payment</h2>
+    <p class="text-gray-500 text-sm mt-2" id="status-msg">
+        Check your phone for the M-Pesa prompt.<br/>Enter your PIN to complete payment.
+    </p>
+    <div class="mt-6 bg-blue-50 rounded-xl p-4">
+        <p class="text-xs text-gray-500">Package</p>
+        <p class="font-bold text-gray-800">{{ package.name }}</p>
+        <p class="text-blue-600 text-sm">KES {{ package.price|floatformat:0 }}</p>
+    </div>
+    <div class="mt-4 text-xs text-gray-400">
+        Checking payment status automatically...
+    </div>
+    <a href="{% url 'portal_home' %}" class="mt-6 block text-blue-500 text-sm hover:underline">
+        ← Back to packages
+    </a>
+</div>
+
+<script>
+let attempts = 0;
+const maxAttempts = 40;
+
+function checkStatus() {
+    fetch('/payments/check/{{ client.payments.last.pk }}/')
+        .then(r => r.json())
+        .then(data => {
+            if (data.is_completed) {
+                document.getElementById('status-icon').innerHTML =
+                    '<i class="fas fa-check text-green-500 text-2xl"></i>';
+                document.getElementById('status-icon').className =
+                    'w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4';
+                document.getElementById('status-title').textContent = 'Payment Successful!';
+                document.getElementById('status-msg').textContent = 'Connecting you to the internet...';
+                setTimeout(() => window.location.href = '{% url "portal_success" %}', 1500);
+            } else if (data.status === 'failed') {
+                document.getElementById('status-icon').innerHTML =
+                    '<i class="fas fa-times text-red-500 text-2xl"></i>';
+                document.getElementById('status-icon').className =
+                    'w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4';
+                document.getElementById('status-title').textContent = 'Payment Failed';
+                document.getElementById('status-msg').textContent =
+                    'Payment was not completed. Please try again.';
+            } else {
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(checkStatus, 3000);
+                } else {
+                    document.getElementById('status-msg').textContent =
+                        'Taking longer than expected. Please check your M-Pesa messages.';
+                }
+            }
+        })
+        .catch(() => {
+            attempts++;
+            if (attempts < maxAttempts) setTimeout(checkStatus, 3000);
+        });
+}
+setTimeout(checkStatus, 3000);
+</script>
+</body>
+</html>

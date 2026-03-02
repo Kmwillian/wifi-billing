@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block title %}Packages — VilNet{% endblock %}
+{% block page_title %}Packages{% endblock %}
+{% block page_subtitle %}Manage hotspot internet packages{% endblock %}
+
+{% block content %}
+
+<!-- ── Stats Cards ─────────────────────────────────── -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total Packages</p>
+                <p class="text-3xl font-bold text-gray-800 mt-1">{{ packages.count }}</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-tags text-blue-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Active Packages</p>
+                <p class="text-3xl font-bold text-green-600 mt-1">{{ active_count }}</p>
+            </div>
+            <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Inactive Packages</p>
+                <p class="text-3xl font-bold text-gray-400 mt-1">{{ inactive_count }}</p>
+            </div>
+            <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-pause-circle text-gray-400 text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Actions Bar ────────────────────────────────── -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+        <a href="{% url 'packages:create' %}"
+           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors">
+            <i class="fas fa-plus"></i>
+            Add New Package
+        </a>
+    </div>
+    <div class="text-sm text-gray-500">
+        <i class="fas fa-info-circle mr-1"></i>
+        Drag to reorder packages by priority
+    </div>
+</div>
+
+<!-- ── Packages Table ─────────────────────────────── -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Order
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Package Name
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Price
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Duration
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Data Limit
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Speed
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Status
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Featured
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for package in packages %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-medium text-gray-500">#{{ package.sort_order }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-wifi text-blue-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">{{ package.name }}</p>
+                                {% if package.description %}
+                                <p class="text-xs text-gray-400 mt-0.5 line-clamp-1">{{ package.description|truncatewords:10 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-bold text-emerald-600">KES {{ package.price|floatformat:0 }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-700">{{ package.duration_display }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-700">{{ package.data_limit_display }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-700">{{ package.speed_display }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if package.status == 'active' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span>
+                            Active
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            <span class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span>
+                            Inactive
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        {% if package.is_featured %}
+                        <i class="fas fa-star text-amber-500"></i>
+                        {% else %}
+                        <span class="text-gray-300">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="{% url 'packages:update' package.pk %}"
+                               class="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                               title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button onclick="toggleStatus({{ package.pk }})"
+                                    class="text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors"
+                                    title="Toggle Status">
+                                <i class="fas fa-power-off"></i>
+                            </button>
+                            <a href="{% url 'packages:delete' package.pk %}"
+                               onclick="return confirm('Delete {{ package.name }}?')"
+                               class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+                               title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center justify-center text-gray-400">
+                            <i class="fas fa-tags text-5xl mb-3 opacity-20"></i>
+                            <p class="text-sm font-medium">No packages yet</p>
+                            <a href="{% url 'packages:create' %}"
+                               class="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Create your first package →
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleStatus(pkgId) {
+    if (!confirm('Toggle package status?')) return;
+    
+    fetch(`/packages/${pkgId}/toggle/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.message);
+        location.reload();
+    })
+    .catch(() => alert('Error toggling status'));
+}
+</script>
+{% endblock %}

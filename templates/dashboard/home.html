@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — VilNet{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Real-time overview of your hotspot network{% endblock %}
+
+{% block content %}
+
+<!-- ── Stat Cards ─────────────────────────────────────── -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+
+    <!-- Active Sessions -->
+    <div class="stat-card bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-blue-100 text-sm font-medium">Active Sessions</span>
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <i class="fas fa-signal text-white"></i>
+            </div>
+        </div>
+        <p class="text-4xl font-bold" id="stat-active-sessions">{{ active_sessions }}</p>
+        <p class="text-blue-200 text-xs mt-2 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 bg-green-400 rounded-full pulse-dot"></span>
+            Live connections
+        </p>
+    </div>
+
+    <!-- Today Revenue -->
+    <div class="stat-card bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-emerald-100 text-sm font-medium">Today's Revenue</span>
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <i class="fas fa-money-bill-wave text-white"></i>
+            </div>
+        </div>
+        <p class="text-4xl font-bold" id="stat-today-revenue">KES {{ today_revenue|floatformat:0 }}</p>
+        <p class="text-emerald-200 text-xs mt-2 flex items-center gap-1">
+            {% if revenue_change >= 0 %}
+            <i class="fas fa-arrow-up"></i>
+            {% else %}
+            <i class="fas fa-arrow-down"></i>
+            {% endif %}
+            {{ revenue_change|floatformat:1 }}% vs yesterday
+        </p>
+    </div>
+
+    <!-- Month Revenue -->
+    <div class="stat-card bg-gradient-to-br from-violet-600 to-violet-700 rounded-2xl p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-violet-100 text-sm font-medium">Month Revenue</span>
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <i class="fas fa-calendar-alt text-white"></i>
+            </div>
+        </div>
+        <p class="text-4xl font-bold">KES {{ month_revenue|floatformat:0 }}</p>
+        <p class="text-violet-200 text-xs mt-2">{{ month_payments }} transactions this month</p>
+    </div>
+
+    <!-- Total Clients -->
+    <div class="stat-card bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-5 text-white shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-amber-100 text-sm font-medium">Total Clients</span>
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <i class="fas fa-users text-white"></i>
+            </div>
+        </div>
+        <p class="text-4xl font-bold">{{ total_clients }}</p>
+        <p class="text-amber-100 text-xs mt-2">+{{ today_new_clients }} new today</p>
+    </div>
+</div>
+
+<!-- ── Revenue Chart + Top Packages ──────────────────── -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+
+    <!-- Revenue Chart -->
+    <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-5">
+            <div>
+                <h3 class="font-semibold text-gray-800">Revenue — Last 7 Days</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Daily payment totals in KES</p>
+            </div>
+            <a href="{% url 'dashboard:analytics' %}" class="text-blue-600 text-xs font-medium hover:underline">
+                View full analytics →
+            </a>
+        </div>
+        <canvas id="revenueChart" height="100"></canvas>
+    </div>
+
+    <!-- Top Packages -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-semibold text-gray-800 mb-4">Top Packages This Month</h3>
+        {% if top_packages %}
+        <div class="space-y-3">
+            {% for pkg in top_packages %}
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-blue-600 text-xs font-bold">{{ forloop.counter }}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ pkg.name }}</p>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <div class="flex-1 bg-gray-100 rounded-full h-1.5">
+                            <div class="bg-blue-500 h-1.5 rounded-full"
+                                 style="width: {% widthratio pkg.sales_count top_packages.0.sales_count 100 %}%"></div>
+                        </div>
+                        <span class="text-xs text-gray-500">{{ pkg.sales_count }}</span>
+                    </div>
+                </div>
+                <span class="text-xs font-semibold text-emerald-600">
+                    KES {{ pkg.sales_revenue|floatformat:0 }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center justify-center py-8 text-gray-400">
+            <i class="fas fa-tags text-3xl mb-2 opacity-30"></i>
+            <p class="text-sm">No sales this month yet</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Active Sessions + Recent Payments ─────────────── -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+    <!-- Active Sessions -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800">Live Sessions</h3>
+            <a href="{% url 'clients:active_sessions' %}"
+               class="text-blue-600 text-xs font-medium hover:underline">View all →</a>
+        </div>
+        {% if recent_sessions %}
+        <div class="space-y-2">
+            {% for session in recent_sessions %}
+            <div class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                <div class="w-2 h-2 bg-green-400 rounded-full flex-shrink-0 pulse-dot"></div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate">{{ session.client.full_name }}</p>
+                    <p class="text-xs text-gray-400">{{ session.package.name }}</p>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <p class="text-xs font-semibold text-blue-600">{{ session.time_remaining_display }}</p>
+                    <p class="text-xs text-gray-400">remaining</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center justify-center py-10 text-gray-400">
+            <i class="fas fa-wifi text-3xl mb-2 opacity-30"></i>
+            <p class="text-sm">No active sessions</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-gray-800">Recent Payments</h3>
+            <a href="{% url 'payments:list' %}" class="text-blue-600 text-xs font-medium hover:underline">View all →</a>
+        </div>
+        {% if recent_payments %}
+        <div class="space-y-2">
+            {% for payment in recent_payments %}
+            <div class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                <div class="w-9 h-9 bg-emerald-50 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-check text-emerald-500 text-xs"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate">
+                        {{ payment.client.full_name|default:"Unknown" }}
+                    </p>
+                    <p class="text-xs text-gray-400">
+                        {{ payment.package.name|default:"—" }} •
+                        {{ payment.completed_at|timesince }} ago
+                    </p>
+                </div>
+                <span class="text-sm font-bold text-emerald-600 flex-shrink-0">
+                    KES {{ payment.amount|floatformat:0 }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center justify-center py-10 text-gray-400">
+            <i class="fas fa-receipt text-3xl mb-2 opacity-30"></i>
+            <p class="text-sm">No payments yet</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ctx = document.getElementById('revenueChart').getContext('2d');
+const labels = [{% for d in last_7_days %}"{{ d.day }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+const data   = [{% for d in last_7_days %}{{ d.revenue }}{% if not forloop.last %},{% endif %}{% endfor %}];
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Revenue (KES)',
+            data: data,
+            backgroundColor: 'rgba(59,130,246,0.15)',
+            borderColor: '#3b82f6',
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `KES ${ctx.parsed.y.toLocaleString()}`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.04)' },
+                ticks: {
+                    callback: v => `KES ${v.toLocaleString()}`,
+                    font: { size: 11 }
+                }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { font: { size: 11 } }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,69 @@
+services:
+  # Main Web Service
+  - type: web
+    name: kimnet-hotspot
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn hotspot_billing.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kimnet-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: kimnet-redis
+          property: connectionString
+
+  # Redis (for Celery)
+  - type: redis
+    name: kimnet-redis
+    ipAllowList: []
+    plan: free
+
+  # Celery Worker
+  - type: worker
+    name: kimnet-celery-worker
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "celery -A hotspot_billing worker --loglevel=info"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kimnet-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: kimnet-redis
+          property: connectionString
+
+  # Celery Beat (for scheduled tasks)
+  - type: worker
+    name: kimnet-celery-beat
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "celery -A hotspot_billing beat --loglevel=info"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kimnet-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: kimnet-redis
+          property: connectionString
+
+databases:
+  - name: kimnet-db
+    plan: free

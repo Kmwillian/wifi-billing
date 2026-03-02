@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>KimNet WiFi — Connect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .package-card { 
+            transition: all 0.2s ease; 
+            cursor: pointer;
+            position: relative;
+            border: 2px solid #e5e7eb;
+        }
+        .package-card:hover { 
+            transform: translateY(-2px); 
+            border-color: #2563eb;
+            box-shadow: 0 8px 20px rgba(37,99,235,0.15); 
+        }
+        .package-card.selected { 
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        .popular-badge {
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+        }
+        .price-text {
+            font-size: 2.5rem;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+        @media (max-width: 640px) {
+            .price-text { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
+
+<div class="min-h-screen flex flex-col">
+
+    {% if active_session %}
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- ALREADY CONNECTED -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="flex-1 flex flex-col items-center justify-center px-4 py-8">
+        
+        <div class="w-20 h-20 bg-blue-500 rounded-3xl flex items-center justify-center mb-6 shadow-2xl">
+            <i class="fas fa-wifi text-white text-3xl"></i>
+        </div>
+
+        <h1 class="text-white text-2xl font-bold mb-2">KimNet WiFi</h1>
+        <p class="text-blue-300 text-sm mb-8">Fast & Reliable Access</p>
+
+        <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-check text-green-500 text-2xl"></i>
+            </div>
+            <h2 class="text-gray-800 font-bold text-xl">You're Connected!</h2>
+            <p class="text-gray-500 text-sm mt-1">{{ existing_client.full_name }}</p>
+            
+            <div class="mt-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5">
+                <p class="text-sm text-gray-600 font-medium">Time Remaining</p>
+                <p class="text-4xl font-extrabold text-blue-600 mt-2">{{ active_session.time_remaining_display }}</p>
+                <p class="text-xs text-gray-500 mt-2">{{ active_session.package.name }}</p>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-gray-100">
+                <p class="text-xs text-gray-400 mb-2">Need help?</p>
+                <a href="tel:+254708008706" 
+                   class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold text-sm">
+                    <i class="fas fa-phone"></i>
+                    Call +254 708 008 706
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- PACKAGE SELECTION (COMPACT VERSION)
+    <!-- ══════════════════════════════════════════════════ -->
+    
+    <!-- Header -->
+    <div class="text-center pt-6 pb-4 px-4">
+        <div class="w-20 h-20 bg-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-2xl">
+            <i class="fas fa-wifi text-white text-3xl"></i>
+        </div>
+        <h1 class="text-white text-3xl font-bold mb-2">KimNet WiFi</h1>
+        <p class="text-blue-300 text-base">Fast & Reliable Access</p>
+    </div>
+
+    <!-- Packages Section -->
+    <div class="flex-1 px-3 pb-6">
+        <div class="max-w-2xl mx-auto">
+            
+            <p class="text-blue-200 text-center text-sm font-medium mb-4">
+                Select a package and pay via M-Pesa
+            </p>
+
+            {% if error %}
+            <div class="bg-red-500 text-white rounded-2xl p-3 mb-4 text-sm font-medium">
+                <i class="fas fa-exclamation-circle mr-2"></i> {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- Packages Grid (2 columns on mobile) -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                {% for pkg in packages %}
+                <div class="package-card bg-white rounded-2xl p-4 relative"
+                     onclick="selectPackage({{ pkg.pk }}, '{{ pkg.name }}', '{{ pkg.price }}', '{{ pkg.duration_display }}')">
+                    
+                    <!-- Popular Badge -->
+                    {% if pkg.is_featured %}
+                    <span class="popular-badge">Popular</span>
+                    {% endif %}
+
+                    <!-- Package Name -->
+                    <h3 class="text-gray-800 font-bold text-base mb-1">{{ pkg.name }}</h3>
+                    
+                    <!-- Duration -->
+                    <div class="flex items-center gap-1 text-blue-600 text-xs font-medium mb-3">
+                        <i class="far fa-clock text-xs"></i>
+                        <span>{{ pkg.duration_display }}</span>
+                    </div>
+
+                    <!-- Price (HERO) -->
+                    <div class="mb-3">
+                        <p class="price-text text-blue-600">{{ pkg.price|floatformat:0 }}</p>
+                        <p class="text-xs text-gray-500 font-medium">KES</p>
+                    </div>
+
+                    <!-- Features (minimal) -->
+                    <div class="space-y-1.5 text-xs text-gray-600">
+                        <div class="flex items-center gap-1.5">
+                            <i class="fas fa-mobile-alt w-3 text-gray-400 text-xs"></i>
+                            <span>{{ pkg.max_devices }} device{{ pkg.max_devices|pluralize }}</span>
+                        </div>
+                        {% if pkg.data_limit_mb %}
+                        <div class="flex items-center gap-1.5">
+                            <i class="fas fa-database w-3 text-gray-400 text-xs"></i>
+                            <span>{{ pkg.data_limit_display }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-2 text-center text-blue-200 py-12">
+                    <i class="fas fa-tags text-4xl mb-2 opacity-30"></i>
+                    <p class="text-sm">No packages available</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Payment Form (Hidden Initially) -->
+            <div id="payment-form" class="bg-white rounded-2xl shadow-2xl p-5 hidden">
+                <h3 class="font-bold text-gray-800 text-base mb-1">Complete Payment</h3>
+                <div id="selected-package-info" class="text-xs text-gray-500 mb-4"></div>
+
+                <form method="post" action="{% url 'portal_connect' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="package_id" id="package-id-input"/>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-mobile-alt mr-1"></i> M-Pesa Number
+                        </label>
+                        <input type="tel" 
+                               name="phone" 
+                               placeholder="0708008706" 
+                               required
+                               pattern="[0-9]{10}"
+                               maxlength="10"
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base font-medium"/>
+                        <p class="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                            <i class="fas fa-info-circle"></i>
+                            You'll receive an STK Push prompt
+                        </p>
+                    </div>
+                    
+                    <button type="submit"
+                        class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-3.5 rounded-xl transition-all text-base shadow-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle"></i>
+                        Pay Now
+                    </button>
+
+                    <button type="button" 
+                            onclick="cancelSelection()"
+                            class="w-full mt-2 text-gray-600 hover:text-gray-800 font-medium py-2 text-sm">
+                        ← Back to packages
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Sticky Bottom Bar with Support -->
+    <div class="bg-slate-900/80 backdrop-blur border-t border-white/10 py-3 px-4 sticky bottom-0">
+        <div class="max-w-2xl mx-auto flex items-center justify-between">
+            <div class="text-xs text-blue-400">
+                KIMNET NETWORKS
+            </div>
+            <a href="tel:+254708008706" 
+               class="flex items-center gap-1.5 text-white hover:text-blue-300 font-semibold text-sm transition-colors bg-blue-600/20 px-3 py-1.5 rounded-lg">
+                <i class="fas fa-phone-alt text-xs"></i>
+                <span>SUPPORT</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+let selectedCard = null;
+
+function selectPackage(id, name, price, duration) {
+    // Remove previous selection
+    document.querySelectorAll('.package-card').forEach(c => c.classList.remove('selected'));
+    
+    // Mark current as selected
+    selectedCard = event.currentTarget;
+    selectedCard.classList.add('selected');
+    
+    // Update form
+    document.getElementById('package-id-input').value = id;
+    document.getElementById('selected-package-info').innerHTML = 
+        `<strong>${name}</strong> — KES ${price} for ${duration}`;
+    
+    // Show payment form with smooth scroll
+    const form = document.getElementById('payment-form');
+    form.classList.remove('hidden');
+    setTimeout(() => {
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+}
+
+function cancelSelection() {
+    document.querySelectorAll('.package-card').forEach(c => c.classList.remove('selected'));
+    selectedCard = null;
+    document.getElementById('payment-form').classList.add('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

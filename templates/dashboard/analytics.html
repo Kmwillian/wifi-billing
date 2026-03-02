@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}Analytics — KimNet{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+{% block page_subtitle %}Detailed insights and statistics{% endblock %}
+
+{% block content %}
+
+<!-- Revenue Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+    <!-- Daily Revenue (Last 30 Days) -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-semibold text-gray-800 mb-4">Daily Revenue — Last 30 Days</h3>
+        <canvas id="dailyRevenueChart" height="100"></canvas>
+    </div>
+
+    <!-- Monthly Revenue (Last 6 Months) -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-semibold text-gray-800 mb-4">Monthly Revenue — Last 6 Months</h3>
+        <canvas id="monthlyRevenueChart" height="100"></canvas>
+    </div>
+</div>
+
+<!-- Package Distribution + Payment Methods -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+    <!-- Package Distribution -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-semibold text-gray-800 mb-4">Package Sales Distribution</h3>
+        <canvas id="packageChart" height="120"></canvas>
+    </div>
+
+    <!-- Payment Methods -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-semibold text-gray-800 mb-4">Payment Methods</h3>
+        <canvas id="paymentMethodChart" height="120"></canvas>
+    </div>
+</div>
+
+<!-- Client Growth -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h3 class="font-semibold text-gray-800 mb-4">Client Growth — Last 30 Days</h3>
+    <canvas id="clientGrowthChart" height="80"></canvas>
+</div>
+
+<!-- Session Stats -->
+<div class="grid grid-cols-1 sm:grid-cols-4 gap-5">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total Sessions</p>
+                <p class="text-3xl font-bold text-gray-800 mt-1">{{ total_sessions }}</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-chart-line text-blue-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Active Now</p>
+                <p class="text-3xl font-bold text-green-600 mt-1">{{ active_sessions }}</p>
+            </div>
+            <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-signal text-green-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Expired</p>
+                <p class="text-3xl font-bold text-gray-400 mt-1">{{ expired_sessions }}</p>
+            </div>
+            <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-history text-gray-400 text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Terminated</p>
+                <p class="text-3xl font-bold text-red-600 mt-1">{{ terminated_sessions }}</p>
+            </div>
+            <div class="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
+                <i class="fas fa-stop-circle text-red-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Daily Revenue Chart
+const dailyCtx = document.getElementById('dailyRevenueChart').getContext('2d');
+new Chart(dailyCtx, {
+    type: 'line',
+    data: {
+        labels: {{ daily_labels|safe }},
+        datasets: [{
+            label: 'Revenue (KES)',
+            data: {{ daily_revenue|safe }},
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `KES ${ctx.parsed.y.toLocaleString()}`
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: v => `KES ${v.toLocaleString()}`
+                }
+            }
+        }
+    }
+});
+
+// Monthly Revenue Chart
+const monthlyCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+new Chart(monthlyCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ monthly_labels|safe }},
+        datasets: [{
+            label: 'Revenue (KES)',
+            data: {{ monthly_revenue|safe }},
+            backgroundColor: 'rgba(16,185,129,0.8)',
+            borderRadius: 8,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: v => `KES ${v.toLocaleString()}`
+                }
+            }
+        }
+    }
+});
+
+// Package Distribution Chart
+const packageCtx = document.getElementById('packageChart').getContext('2d');
+new Chart(packageCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ package_labels|safe }},
+        datasets: [{
+            data: {{ package_data|safe }},
+            backgroundColor: [
+                '#3b82f6',
+                '#10b981',
+                '#f59e0b',
+                '#ef4444',
+                '#8b5cf6',
+                '#ec4899',
+            ],
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+            }
+        }
+    }
+});
+
+// Payment Methods Chart
+const paymentCtx = document.getElementById('paymentMethodChart').getContext('2d');
+new Chart(paymentCtx, {
+    type: 'pie',
+    data: {
+        labels: ['M-Pesa', 'Cash', 'Manual'],
+        datasets: [{
+            data: [{{ mpesa_count }}, {{ cash_count }}, {{ manual_count }}],
+            backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+            }
+        }
+    }
+});
+
+// Client Growth Chart
+const clientCtx = document.getElementById('clientGrowthChart').getContext('2d');
+new Chart(clientCtx, {
+    type: 'line',
+    data: {
+        labels: {{ client_growth_labels|safe }},
+        datasets: [{
+            label: 'Total Clients',
+            data: {{ client_growth_data|safe }},
+            borderColor: '#8b5cf6',
+            backgroundColor: 'rgba(139,92,246,0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

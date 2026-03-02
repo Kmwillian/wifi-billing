@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Active Sessions — KimNet{% endblock %}
+{% block page_title %}Active Sessions{% endblock %}
+{% block page_subtitle %}Currently connected clients{% endblock %}
+
+{% block content %}
+
+<!-- Stats Card -->
+<div class="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl shadow-lg p-6 mb-6 text-white">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-green-100 text-sm font-medium mb-1">Live Connections</p>
+            <p class="text-5xl font-bold">{{ sessions.count }}</p>
+            <p class="text-green-100 text-sm mt-2">
+                <i class="fas fa-wifi mr-1"></i>
+                Clients online right now
+            </p>
+        </div>
+        <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
+            <i class="fas fa-signal text-5xl"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Sessions Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for session in sessions %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+        <!-- Client Info -->
+        <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <span class="text-blue-600 font-bold text-lg">{{ session.client.full_name|first|upper }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-semibold text-gray-800 truncate">{{ session.client.full_name }}</p>
+                <p class="text-xs text-gray-400">{{ session.client.phone }}</p>
+            </div>
+            <span class="w-2 h-2 bg-green-500 rounded-full pulse-dot"></span>
+        </div>
+
+        <!-- Package Info -->
+        <div class="mb-4">
+            <p class="text-xs text-gray-500 mb-1">Package</p>
+            <p class="font-semibold text-gray-800">{{ session.package.name }}</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-blue-50 rounded-lg p-3">
+                <p class="text-xs text-gray-600 mb-1">Time Left</p>
+                <p class="font-bold text-blue-600">{{ session.time_remaining_display }}</p>
+            </div>
+            <div class="bg-purple-50 rounded-lg p-3">
+                <p class="text-xs text-gray-600 mb-1">Data Used</p>
+                <p class="font-bold text-purple-600">{{ session.data_used_display }}</p>
+            </div>
+        </div>
+
+        <!-- Session Details -->
+        <div class="text-xs text-gray-500 space-y-1 mb-4">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-clock w-4"></i>
+                <span>Started {{ session.started_at|timesince }} ago</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <i class="fas fa-hourglass-end w-4"></i>
+                <span>Expires {{ session.expires_at|date:"H:i, d M" }}</span>
+            </div>
+            {% if session.ip_address %}
+            <div class="flex items-center gap-2">
+                <i class="fas fa-network-wired w-4"></i>
+                <span class="font-mono">{{ session.ip_address }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-2">
+            <a href="{% url 'clients:detail' session.client.pk %}"
+               class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 rounded-lg text-xs font-medium text-center transition-colors">
+                <i class="fas fa-eye mr-1"></i>
+                View Client
+            </a>
+            <a href="{% url 'clients:terminate_session' session.pk %}"
+               onclick="return confirm('Terminate session for {{ session.client.full_name }}?')"
+               class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg text-xs font-medium text-center transition-colors">
+                <i class="fas fa-stop-circle mr-1"></i>
+                Terminate
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-3">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+            <i class="fas fa-wifi-slash text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-gray-800 font-semibold text-lg mb-2">No Active Sessions</h3>
+            <p class="text-gray-500 text-sm">No clients are currently connected to the WiFi</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh every 30 seconds
+setTimeout(() => location.reload(), 30000);
+</script>
+{% endblock %}
